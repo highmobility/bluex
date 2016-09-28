@@ -1,0 +1,2 @@
+defmodule Bluex do
+end

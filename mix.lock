@@ -1,0 +1,1 @@
+%{"dbus": {:git, "https://github.com/slashmili/erlang-dbus.git", "6998ebd8236dcbf9b8a8ca7df83595d448e403bb", [branch: "unix-socket"]}}
