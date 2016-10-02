@@ -2,12 +2,21 @@ defmodule Bluex.DBusCase do
   use ExUnit.CaseTemplate
 
   setup tags do
-    dbus_server = if tags[:dbus_server] do
+    dbus = if tags[:dbus_server] do
       Bluex.PyDBusServer.new(tags[:dbus_server])
     else
       nil
     end
-    {:ok, dbus_server: dbus_server}
+
+    on_exit fn ->
+      case dbus do
+        %{dbus_server: dbus_server, dbus_daemon: dbus_daemon} ->
+          send(dbus_server, {:command, :exit})
+          send(dbus_daemon, {:command, :exit})
+          _ -> :ok
+      end
+    end
+    {:ok, dbus: dbus}
   end
 
 end

@@ -1,6 +1,6 @@
 defmodule DBusDiscoveryTest do
   use Bluex.DBusCase, async: false
-  @moduletag dbus_server: "test/bluem-service.py"
+  @moduletag dbus_server: "test/bluem-dbus/bluem-service.py"
 
   @behaviour Bluex.DBusDiscovery
 
@@ -11,11 +11,6 @@ defmodule DBusDiscoveryTest do
 
 
   alias Bluex.DBusDiscovery
-
-  setup do
-    #{:ok, _} = DBusDiscovery.start_link(__MODULE__, [])
-    :ok
-  end
 
   test "get list of adapters" do
     {:ok, _} = DBusDiscovery.start_link(__MODULE__, [])
