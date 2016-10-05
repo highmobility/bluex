@@ -10,6 +10,8 @@ defmodule DBusDeviceTest do
   @dbus_mock_path "/org/mock"
   @dbus_type Application.get_env(:bluex, :bus_type)
   @iface_dbus_name Application.get_env(:bluex, :iface_dbus_name)
+  @device_dbus_name Application.get_env(:bluex, :device_dbus_name)
+  @service_uuid "713d0100-503e-4c75-ba94-3148f18d941e"
 
   #test "call device_found callback when new device is discoverd" do
     #    {:ok, _} = DBusDiscovery.start_link(__MODULE__, [])
@@ -37,7 +39,7 @@ defmodule DBusDeviceTest do
     {:ok, _} = DBusDevice.start_link(__MODULE__, device_info)
   end
 
-  test "connects to a device" do
+  test "connect to a device" do
 
     device = add_device
 
@@ -52,13 +54,34 @@ defmodule DBusDeviceTest do
     assert %{"Connected" => true} = prop
   end
 
-  defp read_device_properties(device) do
-    {:ok, bus} = :dbus_bus_connection.connect(@dbus_type)
-    {:ok, device_proxy} = :dbus_proxy.start_link(bus, @dbus_name, DBusDevice.device_dbus_path(device))
-    :dbus_proxy.call(device_proxy, "org.freedesktop.DBus.Properties", "GetAll", [@iface_dbus_name])
+
+  test "discover_service" do
+    device = add_device
+
+    {:ok, pid} = DBusDevice.start_link(__MODULE__, device)
+    :ok = DBusDevice.connect(pid)
+    Process.sleep(100)
+
+    {:ok, prop} =  read_device_properties(device)
+    assert %{"Connected" => true} = prop
+
+    :ok = DBusDevice.discover_service(pid, @service_uuid)
+    Process.sleep(100)
+
+    services = DBusDevice.get_service(pid, @service_uuid)
+    assert services
+
+    assert @service_uuid in Map.keys(services)
   end
 
-  defp add_device do
+
+  def read_device_properties(device) do
+    {:ok, bus} = :dbus_bus_connection.connect(@dbus_type)
+    {:ok, device_proxy} = :dbus_proxy.start_link(bus, @dbus_name, DBusDevice.device_dbus_path(device))
+    :dbus_proxy.call(device_proxy, "org.freedesktop.DBus.Properties", "GetAll", [@device_dbus_name])
+  end
+
+  def add_device do
     {:ok, bus} = :dbus_bus_connection.connect(@dbus_type)
     {:ok, mock_controller} = :dbus_proxy.start_link(bus, @dbus_name, @dbus_mock_path)
     {:ok, device_dbus_path} = :dbus_proxy.call(mock_controller, @mock_dbus_name, "AddDevice", [])
@@ -68,6 +91,10 @@ defmodule DBusDeviceTest do
   end
 
   def device_connected(_, _) do
+    :ok
+  end
+
+  def service_found(_, _) do
     :ok
   end
 end
