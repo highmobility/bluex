@@ -88,7 +88,7 @@ defmodule Bluex.DBusDevice do
   @doc false
   def handle_cast({:discover_service, service_uuid}, %{device_proxy: nil} = state) do
     #TODO: add test
-    apply(state[:module], :service_not_found, [service_uuid])
+    apply(state[:module], :service_not_found, [state[:device], service_uuid])
     {:noreply, state}
   end
 
@@ -113,13 +113,15 @@ defmodule Bluex.DBusDevice do
       apply(state[:module], :service_found, [state[:device], service_uuid])
       {:noreply, %{state| services: services}}
     else
-      _ -> {:noreply, state}
+      _ ->
+      apply(state[:module], :service_not_found, [state[:device], service_uuid])
+      {:noreply, state}
     end
   end
 
   @doc false
   def handle_call({:get_service, service_uuid}, _, state) do
-    {:reply, state[:services], state}
+    {:reply, state[:services][service_uuid], state}
   end
 
   @doc """

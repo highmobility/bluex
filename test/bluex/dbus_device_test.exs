@@ -54,6 +54,17 @@ defmodule DBusDeviceTest do
     assert %{"Connected" => true} = prop
   end
 
+  test "doesnt discover any service before connecting to the device" do
+    device = add_device
+
+    {:ok, pid} = DBusDevice.start_link(__MODULE__, device)
+    Process.sleep(100)
+
+    :ok = DBusDevice.discover_service(pid, @service_uuid)
+    Process.sleep(100)
+
+    refute DBusDevice.get_service(pid, @service_uuid)
+  end
 
   test "discover_service" do
     device = add_device
@@ -68,11 +79,25 @@ defmodule DBusDeviceTest do
     :ok = DBusDevice.discover_service(pid, @service_uuid)
     Process.sleep(100)
 
-    services = DBusDevice.get_service(pid, @service_uuid)
-    assert services
-
-    assert @service_uuid in Map.keys(services)
+    assert DBusDevice.get_service(pid, @service_uuid)
   end
+
+  test "discover non existence service" do
+    device = add_device
+
+    {:ok, pid} = DBusDevice.start_link(__MODULE__, device)
+    :ok = DBusDevice.connect(pid)
+    Process.sleep(100)
+
+    {:ok, prop} =  read_device_properties(device)
+    assert %{"Connected" => true} = prop
+
+    :ok = DBusDevice.discover_service(pid, "82a1ae9e-8b02-11e6-ae22-56b6b6499611")
+    Process.sleep(100)
+
+    refute DBusDevice.get_service(pid, "82a1ae9e-8b02-11e6-ae22-56b6b6499611")
+  end
+
 
 
   def read_device_properties(device) do
@@ -97,4 +122,9 @@ defmodule DBusDeviceTest do
   def service_found(_, _) do
     :ok
   end
+
+  def service_not_found(_, _) do
+    :ok
+  end
+
 end

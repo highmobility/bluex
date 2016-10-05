@@ -3,4 +3,5 @@ defmodule Bluex.Device do
 
   @callback device_connected(%Bluex.Device{}, any) :: any
   @callback service_found(%Bluex.Device{}, String.t) :: any
+  @callback service_not_found(%Bluex.Device{}, String.t) :: any
 end
