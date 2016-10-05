@@ -77,10 +77,16 @@ class BlueMock(dbus.service.Object):
 class BlueMockDevice(dbus.service.Object):
     def __init__(self, bus_name, object_path):
         dbus.service.Object.__init__(self, bus_name, object_path)
+        self.connected = False
 
     @dbus.service.method("org.bluem.Device1")
     def Connect(self):
         _log("Connecting ...")
+        self.connected = True
+
+    @dbus.service.method("org.freedesktop.DBus.Properties", in_signature='s', out_signature='a{sv}')
+    def GetAll(self, interface):
+        return {"Connected": self.connected}
 
 class BlueMockHCI(dbus.service.Object):
     def __init__(self, bus_name, object_path="/"):
