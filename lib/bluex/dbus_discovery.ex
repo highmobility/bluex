@@ -40,7 +40,7 @@ defmodule Bluex.DBusDiscovery do
   end
 
   @doc false
-  def init([module, opts]) do
+  def init([module, _opts]) do
     {:ok, bus} = :dbus_bus_connection.connect(@dbus_type)
     {:ok, adapter_manager} = :dbus_proxy.start_link(bus, @dbus_name, @dbus_bluez_path)
     {:ok, bluez_manager} = :dbus_proxy.start_link(bus, @dbus_name, "/")
@@ -87,9 +87,9 @@ defmodule Bluex.DBusDiscovery do
   @doc false
   def handle_cast(:start_discovery, state) do
     #TODO: ???get list of devices now and call the device_found callback before leaving this function
-    add_interface = fn(sender, "org.freedesktop.DBus.ObjectManager", "InterfacesAdded", path, args, pid) ->
+    add_interface = fn(_sender, "org.freedesktop.DBus.ObjectManager", "InterfacesAdded", _path, args, pid) ->
       case args do
-        {interface_bluez_path, %{@device_dbus_name => device_details}} ->
+        {_interface_bluez_path, %{@device_dbus_name => device_details}} ->
           device = %Bluex.Device{mac_address: device_details["Address"], manufacturer_data: device_details["ManufacturerData"], rssi: device_details["RSSI"], uuids: device_details["UUIDs"], adapter: "hci1"}
           Bluex.DBusDiscovery.device_found(pid, device)
         _ -> :ok
@@ -120,7 +120,7 @@ defmodule Bluex.DBusDiscovery do
     {:noreply, state}
   end
 
-  defmacro __using__(opts) do
+  defmacro __using__(_opts) do
     quote [unquote: false, location: :keep] do
       @behaviour Bluex.DBusDiscovery
       import Bluex.DBusDiscovery

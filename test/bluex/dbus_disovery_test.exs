@@ -45,7 +45,7 @@ defmodule DBusDiscoveryTest do
     assert device_dbus_path =~ dbus_name
   end
 
-  def device_found(device) do
+  def device_found(_device) do
     :ok
   end
 

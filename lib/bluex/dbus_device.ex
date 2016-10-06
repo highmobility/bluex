@@ -160,7 +160,7 @@ defmodule Bluex.DBusDevice do
   def handle_cast({:discover_characteristic, service_uuid, characteristic_uuid}, state) do
     characteristics = case state do
       %{services: %{^service_uuid => %{characteristics: characteristics}}} -> characteristics
-        _ -> do_discover_characteristic(service_uuid, characteristic_uuid, state)
+        _ -> do_discover_characteristics(service_uuid, state)
     end
     if characteristics[characteristic_uuid] do
       apply(state[:module], :characteristic_found, [state[:device], service_uuid, characteristic_uuid])
@@ -228,7 +228,7 @@ defmodule Bluex.DBusDevice do
     {proxy, uuid}
   end
 
-  defp do_discover_characteristic(service_uuid, characteristic_uuid, state) do
+  defp do_discover_characteristics(service_uuid, state) do
     device = state[:device]
     service = state[:services][service_uuid]
 

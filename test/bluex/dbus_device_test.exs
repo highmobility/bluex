@@ -165,7 +165,7 @@ defmodule DBusDeviceTest do
     assert value == "ACEB"
   end
 
-  def send_notification(device, service_uuid, characteristic_uuid, value) do
+  def send_notification(device, _service_uuid, _characteristic_uuid, value) do
     {:ok, bus} = :dbus_bus_connection.connect(@dbus_type)
     path = "/org/bluem/hci1/dev_#{String.replace(device.mac_address, ":", "_")}/service000b/char000b"
     {:ok, char_proxy} = :dbus_proxy.start_link(bus, @dbus_name, path)
