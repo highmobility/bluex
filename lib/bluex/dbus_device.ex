@@ -87,7 +87,6 @@ defmodule Bluex.DBusDevice do
 
   @doc false
   def handle_cast({:discover_service, service_uuid}, %{device_proxy: nil} = state) do
-    #TODO: add test
     apply(state[:module], :service_not_found, [state[:device], service_uuid])
     {:noreply, state}
   end
