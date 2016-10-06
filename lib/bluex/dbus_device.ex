@@ -5,6 +5,7 @@ defmodule Bluex.DBusDevice do
   @iface_dbus_name Application.get_env(:bluex, :iface_dbus_name)
   @device_dbus_name Application.get_env(:bluex, :device_dbus_name)
   @gatt_dbus_name Application.get_env(:bluex, :gatt_dbus_name)
+  @characteristic_gatt_dbus_name Application.get_env(:bluex, :characteristic_gatt_dbus_name)
   @dbus_bluez_path Application.get_env(:bluex, :dbus_bluez_path)
   @dbus_type Application.get_env(:bluex, :bus_type)
   @properties_dbus_name "org.freedesktop.DBus.Properties"
@@ -63,7 +64,6 @@ defmodule Bluex.DBusDevice do
   @doc """
   Discovers service with given uuid and calls `service_found` callback if service is provided.
 
-  #TODO: call service_not_found
   """
   @spec discover_service(pid, String.t) :: :ok
   def discover_service(pid, service_uuid) do
@@ -73,6 +73,18 @@ defmodule Bluex.DBusDevice do
   @spec get_service(pid, String.t) :: any
   def get_service(pid, service_uuid) do
     GenServer.call(pid, {:get_service, service_uuid})
+  end
+
+  @doc """
+  Discovers characteristic with given uuid and calls 'characteristic_found` callback if the characteristic is
+  found otherwise calls `characteristic_not_found` callback.
+
+  In the first call only it traverses DBus path and finds the characteristic, on the next calls it uses list of
+  cached characteristics.
+  """
+  @spec discover_characteristic(pid, String.t, String.t) :: any
+  def discover_characteristic(pid, service_uuid, characteristic_uuid) do
+    GenServer.cast(pid, {:discover_characteristic, service_uuid, characteristic_uuid})
   end
 
   @doc false
@@ -99,7 +111,7 @@ defmodule Bluex.DBusDevice do
     true <- Enum.member?(services, service_uuid) do
       services = device_proxy
                  |> :dbus_proxy.children
-                 |> Enum.map(fn (s) -> s |> String.split("/") |> Enum.at(-1) end)
+                 |> Enum.map(&Path.basename/1)
                  |> Enum.map(fn (service_dbus_name) ->
                     IO.puts "path: #{device_dbus_path(device)}/#{service_dbus_name}"
                     {:ok, service} = :dbus_proxy.start_link(state[:bus], @dbus_name, "#{device_dbus_path(device)}/#{service_dbus_name}")
@@ -119,6 +131,21 @@ defmodule Bluex.DBusDevice do
   end
 
   @doc false
+  def handle_cast({:discover_characteristic, service_uuid, characteristic_uuid}, state) do
+    characteristics = case state do
+      %{services: %{^service_uuid => %{characteristics: characteristics}}} -> characteristics
+        _ -> do_discover_characteristic(service_uuid, characteristic_uuid, state)
+    end
+    if characteristics[characteristic_uuid] do
+      apply(state[:module], :characteristic_found, [state[:device], service_uuid, characteristic_uuid])
+    else
+      apply(state[:module], :characteristic_not_found, [state[:device], service_uuid, characteristic_uuid])
+    end
+    state = put_in(state[:services][service_uuid][:characteristics], characteristics)
+    {:noreply, state}
+  end
+
+  @doc false
   def handle_call({:get_service, service_uuid}, _, state) do
     {:reply, state[:services][service_uuid], state}
   end
@@ -130,5 +157,26 @@ defmodule Bluex.DBusDevice do
   def device_dbus_path(device) do
     mac = String.replace(device.mac_address, ":", "_")
     "#{@dbus_bluez_path}/#{device.adapter}/dev_#{mac}"
+  end
+
+  defp get_proxy_and_uuid(bus, dbus_path, dbus_name) do
+    {:ok, proxy} = :dbus_proxy.start_link(bus, @dbus_name, dbus_path)
+    {:ok, uuid} = :dbus_proxy.call(proxy, @properties_dbus_name, "Get", [dbus_name, "UUID"])
+    {proxy, uuid}
+  end
+
+  defp do_discover_characteristic(service_uuid, characteristic_uuid, state) do
+    device = state[:device]
+    service = state[:services][service_uuid]
+
+    service[:dbus_proxy]
+    |> :dbus_proxy.children
+    |> Enum.map(&Path.basename/1)
+    |> Enum.map(fn (dbus_name) ->
+         dbus_path = "#{device_dbus_path(device)}/#{service[:dbus_name]}/#{dbus_name}"
+         {proxy, uuid} = get_proxy_and_uuid(state[:bus], dbus_path, @characteristic_gatt_dbus_name)
+         {uuid, %{dbus_name: dbus_name, dbus_proxy: proxy}}
+       end)
+    |> Enum.into(%{})
   end
 end

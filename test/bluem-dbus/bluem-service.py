@@ -111,6 +111,8 @@ class BlueMockService(dbus.service.Object):
     def __init__(self, bus_name, object_path, uuid):
         dbus.service.Object.__init__(self, bus_name, object_path)
         self.uuid = uuid
+        tmp_path = "%s/char000b" % object_path
+        BlueMockCharacteristic(service, object_path=tmp_path, uuid='713d0103-503e-4c75-ba94-3148f18d941e')
 
     @dbus.service.method("org.bluem.GattService1")
     def foo(self):
@@ -125,6 +127,26 @@ class BlueMockService(dbus.service.Object):
             raise dbus.exceptions.DBusException(
                     "org.freedesktop.UnknownInterface",
                     "Interface %s is unknown" % interface)
+
+class BlueMockCharacteristic(dbus.service.Object):
+    def __init__(self, bus_name, object_path, uuid):
+        dbus.service.Object.__init__(self, bus_name, object_path)
+        self.uuid = uuid
+
+    @dbus.service.method("org.bluem.GattService1")
+    def foo(self):
+        return "foo"
+
+    @dbus.service.method("org.freedesktop.DBus.Properties", in_signature='ss', out_signature='v')
+    def Get(self, interface, name):
+        if interface == "org.bluem.GattCharacteristic1" and name == "UUID":
+            return self.uuid
+        else:
+            _log("don't know what is property %s for interface %s" % (name, interface))
+            raise dbus.exceptions.DBusException(
+                    "org.freedesktop.UnknownInterface",
+                    "Interface %s is unknown" % interface)
+
 
 
 class BlueMockHCI(dbus.service.Object):

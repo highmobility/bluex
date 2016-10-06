@@ -3,7 +3,6 @@ defmodule DBusDeviceTest do
   @moduletag dbus_server: "test/bluem-dbus/bluem-service.py"
 
   alias Bluex.DBusDevice
-  alias Bluex.DBusDiscovery
 
   @dbus_name Application.get_env(:bluex, :dbus_name)
   @mock_dbus_name "org.mock"
@@ -12,26 +11,8 @@ defmodule DBusDeviceTest do
   @iface_dbus_name Application.get_env(:bluex, :iface_dbus_name)
   @device_dbus_name Application.get_env(:bluex, :device_dbus_name)
   @service_uuid "713d0100-503e-4c75-ba94-3148f18d941e"
-
-  #test "call device_found callback when new device is discoverd" do
-    #    {:ok, _} = DBusDiscovery.start_link(__MODULE__, [])
-    #    :ok = DBusDiscovery.start_discovery(__MODULE__)
-    #    :timer.sleep(100)
-
-
-    #    {:ok, bus} = :dbus_bus_connection.connect(@dbus_type)
-    #    {:ok, mock_controller} = :dbus_proxy.start_link(bus, @dbus_name, @dbus_mock_path)
-    #    {:ok, device_dbus_path} = :dbus_proxy.call(mock_controller, @mock_dbus_name, "AddDevice", [])
-    #    :timer.sleep(100)
-
-    #    devices = DBusDiscovery.get_devices(__MODULE__)
-    #    assert devices == nil
-    #    refute Enum.empty?(devices)
-    #    d = List.first(devices)
-    #    dbus_name = String.replace(d.mac_address, ":", "_")
-    #    assert device_dbus_path =~ dbus_name
-    #  end
-
+  @characteristic_uuid "713d0103-503e-4c75-ba94-3148f18d941e"
+  @invalid_uuid "82a1ae9e-8b02-11e6-ae22-56b6b6499611"
 
   test "start DBusDevice" do
     device_info = %Bluex.Device{adapter: "hci1", mac_address: "00:16:3e:16:43:32", manufacturer_data: nil, rssi: "-71", uuids: ""}
@@ -92,10 +73,35 @@ defmodule DBusDeviceTest do
     {:ok, prop} =  read_device_properties(device)
     assert %{"Connected" => true} = prop
 
-    :ok = DBusDevice.discover_service(pid, "82a1ae9e-8b02-11e6-ae22-56b6b6499611")
+    :ok = DBusDevice.discover_service(pid, @invalid_uuid)
     Process.sleep(100)
 
-    refute DBusDevice.get_service(pid, "82a1ae9e-8b02-11e6-ae22-56b6b6499611")
+    refute DBusDevice.get_service(pid, @invalid_uuid)
+  end
+
+
+  test "discover characteristics" do
+    device = %{add_device| options: [device_handler_pid: self]}
+
+    {:ok, pid} = DBusDevice.start_link(__MODULE__, device)
+    :ok = DBusDevice.connect(pid)
+    Process.sleep(100)
+
+    {:ok, prop} =  read_device_properties(device)
+    assert %{"Connected" => true} = prop
+
+    :ok = DBusDevice.discover_service(pid, @service_uuid)
+    Process.sleep(100)
+
+    assert DBusDevice.get_service(pid, @service_uuid)
+
+    :ok = DBusDevice.discover_characteristic(pid, @service_uuid, @characteristic_uuid)
+    Process.sleep(100)
+    assert_receive({:characteristic_found, @service_uuid, @characteristic_uuid})
+
+    :ok = DBusDevice.discover_characteristic(pid, @service_uuid, @invalid_uuid)
+    Process.sleep(200)
+    assert_receive({:characteristic_not_found, @service_uuid, @invalid_uuid})
   end
 
 
@@ -127,4 +133,13 @@ defmodule DBusDeviceTest do
     :ok
   end
 
+  def characteristic_found(device, service_uuid, characteristic_uuid) do
+    send(device.options[:device_handler_pid], {:characteristic_found, service_uuid, characteristic_uuid})
+    :ok
+  end
+
+  def characteristic_not_found(device, service_uuid, characteristic_uuid) do
+    send(device.options[:device_handler_pid], {:characteristic_not_found, service_uuid, characteristic_uuid})
+    :ok
+  end
 end

@@ -9,6 +9,7 @@ config :bluex,
   iface_dbus_name: "org.bluez.Adapter1",
   device_dbus_name: "org.bluez.Device1",
   gatt_dbus_name: "org.bluez.GattService1",
+  characteristic_gatt_dbus_name: "org.bluez.GattCharacteristic1",
   dbus_bluez_path: "/org/bluez"
 
 import_config "#{Mix.env}.exs"
