@@ -8,6 +8,8 @@ defmodule Bluex.Mixfile do
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      elixirc_paths: elixirc_paths(Mix.env),
+     package: package,
+     description: description,
      deps: deps()]
   end
 
@@ -24,5 +26,18 @@ defmodule Bluex.Mixfile do
 
   defp deps do
     [{:dbus, github: "slashmili/erlang-dbus", branch: "unix-socket"}]
+  end
+
+  def package do
+    [maintainers: ["Milad Rastian"],
+     licenses: ["MIT"],
+     links: %{github: "https://github.com/highmobility/bluex"},
+     files: ~w(lib config)]
+  end
+
+  def description do
+    """
+    Bluex is an abstraction layer on top of the DBus/Bluez.
+    """
   end
 end
