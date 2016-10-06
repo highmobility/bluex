@@ -84,8 +84,6 @@ defmodule Bluex.DBusDiscovery do
     {:noreply, state}
   end
 
-  #path: "/", args: {"/org/bluez/hci1/dev_C0_CB_38_EB_74_13", %{"org.bluez.Device1" => %{"Adapter" => "/org/bluez/hci1", "Address" => "C0:CB:38:EB:74:13", "Alias" => "ubuntu-0", "Blocked" => false, "Class" => 7078144, "Connected" => false, "Icon" => "computer", "LegacyPairing" => false, "Name" => "ubuntu-0", "Paired" => false, "RSSI" => -71, "Trusted" => false, "TxPower" => 0, "UUIDs" => ["0000112d-0000-1000-8000-00805f9b34fb", "00001112-0000-1000-8000-00805f9b34fb", "0000111f-0000-1000-8000-00805f9b34fb", "0000111e-0000-1000-8000-00805f9b34fb", "0000110c-0000-1000-8000-00805f9b34fb", "0000110e-0000-1000-8000-00805f9b34fb", "0000110a-0000-1000-8000-00805f9b34fb", "0000110b-0000-1000-8000-00805f9b34fb"]}, "org.freedesktop.DBus.Introspectable" => %{}, "org.freedesktop.DBus.Properties" => %{}}}
-
   @doc false
   def handle_cast(:start_discovery, state) do
     #TODO: ???get list of devices now and call the device_found callback before leaving this function
