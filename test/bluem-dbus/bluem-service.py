@@ -133,6 +133,7 @@ class BlueMockCharacteristic(dbus.service.Object):
         dbus.service.Object.__init__(self, bus_name, object_path)
         self.uuid = uuid
         self.object_path = object_path
+        self.value = '0000'
 
     @dbus.service.method("org.bluem.GattCharacteristic1")
     def StartNotify(self):
@@ -143,12 +144,13 @@ class BlueMockCharacteristic(dbus.service.Object):
     @dbus.service.method("org.bluem.GattCharacteristic1", in_signature='s')
     def WriteValue(self, value):
         _log("Write value [%s] for %s" % (value, self.uuid))
+        self.PropertiesChanged("org.bluem.GattCharacteristic1", {"Value": value}, [])
+        self.value = value
 
-    @dbus.service.method("org.bluem.GattCharacteristic1")
-    def SendNotification(self):
-        _log("send notification for %s" % self.uuid)
-        self.PropertiesChanged("org.bluem.GattCharacteristic1", {"Value": "ACEA"}, [])
-        return True
+    @dbus.service.method("org.bluem.GattCharacteristic1", out_signature='s')
+    def ReadValue(self):
+        _log("Read value [%s] for %s" % (self.value, self.uuid))
+        return self.value
 
     @dbus.service.method("org.freedesktop.DBus.Properties", in_signature='ss', out_signature='v')
     def Get(self, interface, name):

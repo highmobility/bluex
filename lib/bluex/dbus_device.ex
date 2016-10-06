@@ -105,6 +105,14 @@ defmodule Bluex.DBusDevice do
     GenServer.call(pid, {:write_characteristic_value, service_uuid, characteristic_uuid, value})
   end
 
+  @doc """
+  Reads value form the given characteristic
+  """
+  @spec read_characteristic_value(pid, String.t, String.t) :: any
+  def read_characteristic_value(pid, service_uuid, characteristic_uuid) do
+    GenServer.call(pid, {:read_characteristic_value, service_uuid, characteristic_uuid})
+  end
+
   @doc false
   def handle_cast(:connect, state) do
     {:ok, device_proxy} = :dbus_proxy.start_link(state[:bus], @dbus_name, device_dbus_path(state[:device]))
@@ -191,6 +199,13 @@ defmodule Bluex.DBusDevice do
     characteristic = state[:services][service_uuid][:characteristics][characteristic_uuid]
     :ok = :dbus_proxy.call(characteristic[:dbus_proxy], @characteristic_gatt_dbus_name, "WriteValue", [value])
     {:reply, :ok, state}
+  end
+
+  @doc false
+  def handle_call({:read_characteristic_value, service_uuid, characteristic_uuid}, _, state) do
+    characteristic = state[:services][service_uuid][:characteristics][characteristic_uuid]
+    {:ok, value} = :dbus_proxy.call(characteristic[:dbus_proxy], @characteristic_gatt_dbus_name, "ReadValue", [])
+    {:reply, value, state}
   end
 
   @doc false

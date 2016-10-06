@@ -121,7 +121,7 @@ defmodule DBusDeviceTest do
 
     :ok = DBusDevice.start_notification(pid, @service_uuid, @characteristic_uuid)
     Process.sleep(50)
-    send_notification(device, @service_uuid, @characteristic_uuid)
+    send_notification(device, @service_uuid, @characteristic_uuid, "ACEA")
     Process.sleep(100)
     assert_receive({:notification_received, @service_uuid, @characteristic_uuid, "ACEA"})
   end
@@ -141,12 +141,35 @@ defmodule DBusDeviceTest do
     :ok = DBusDevice.write_characteristic_value(pid, @service_uuid, @characteristic_uuid, "ACEB")
   end
 
+  test "read characteristic" do
+    device = add_device
 
-  def send_notification(device, service_uuid, characteristic_uuid) do
+    {:ok, pid} = DBusDevice.start_link(__MODULE__, device)
+    :ok = DBusDevice.connect(pid)
+    :ok = DBusDevice.discover_service(pid, @service_uuid)
+    :ok = DBusDevice.discover_characteristic(pid, @service_uuid, @characteristic_uuid)
+    Process.sleep(100)
+
+    {:ok, prop} =  read_device_properties(device)
+    assert %{"Connected" => true} = prop
+    assert_receive({:characteristic_found, @service_uuid, @characteristic_uuid})
+
+    value = DBusDevice.read_characteristic_value(pid, @service_uuid, @characteristic_uuid)
+
+    assert value == "0000"
+
+    :ok = DBusDevice.write_characteristic_value(pid, @service_uuid, @characteristic_uuid, "ACEB")
+
+    value = DBusDevice.read_characteristic_value(pid, @service_uuid, @characteristic_uuid)
+
+    assert value == "ACEB"
+  end
+
+  def send_notification(device, service_uuid, characteristic_uuid, value) do
     {:ok, bus} = :dbus_bus_connection.connect(@dbus_type)
     path = "/org/bluem/hci1/dev_#{String.replace(device.mac_address, ":", "_")}/service000b/char000b"
     {:ok, char_proxy} = :dbus_proxy.start_link(bus, @dbus_name, path)
-    {:ok, true} = :dbus_proxy.call(char_proxy, @characteristic_gatt_dbus_name, "SendNotification", [])
+    :ok = :dbus_proxy.call(char_proxy, @characteristic_gatt_dbus_name, "WriteValue", [value])
   end
 
   def read_device_properties(device) do
