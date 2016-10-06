@@ -10,6 +10,7 @@ defmodule DBusDeviceTest do
   @dbus_type Application.get_env(:bluex, :bus_type)
   @iface_dbus_name Application.get_env(:bluex, :iface_dbus_name)
   @device_dbus_name Application.get_env(:bluex, :device_dbus_name)
+  @characteristic_gatt_dbus_name Application.get_env(:bluex, :characteristic_gatt_dbus_name)
   @service_uuid "713d0100-503e-4c75-ba94-3148f18d941e"
   @characteristic_uuid "713d0103-503e-4c75-ba94-3148f18d941e"
   @invalid_uuid "82a1ae9e-8b02-11e6-ae22-56b6b6499611"
@@ -105,6 +106,32 @@ defmodule DBusDeviceTest do
   end
 
 
+  test "start notification and receive the notification" do
+    device = add_device
+
+    {:ok, pid} = DBusDevice.start_link(__MODULE__, device)
+    :ok = DBusDevice.connect(pid)
+    :ok = DBusDevice.discover_service(pid, @service_uuid)
+    :ok = DBusDevice.discover_characteristic(pid, @service_uuid, @characteristic_uuid)
+    Process.sleep(100)
+
+    {:ok, prop} =  read_device_properties(device)
+    assert %{"Connected" => true} = prop
+    assert_receive({:characteristic_found, @service_uuid, @characteristic_uuid})
+
+    :ok = DBusDevice.start_notification(pid, @service_uuid, @characteristic_uuid)
+    Process.sleep(50)
+    send_notification(device, @service_uuid, @characteristic_uuid)
+    Process.sleep(100)
+    assert_receive({:notification_received, @service_uuid, @characteristic_uuid, "ACEA"})
+  end
+
+  def send_notification(device, service_uuid, characteristic_uuid) do
+    {:ok, bus} = :dbus_bus_connection.connect(@dbus_type)
+    path = "/org/bluem/hci1/dev_#{String.replace(device.mac_address, ":", "_")}/service000b/char000b"
+    {:ok, char_proxy} = :dbus_proxy.start_link(bus, @dbus_name, path)
+    {:ok, true} = :dbus_proxy.call(char_proxy, @characteristic_gatt_dbus_name, "SendNotification", [])
+  end
 
   def read_device_properties(device) do
     {:ok, bus} = :dbus_bus_connection.connect(@dbus_type)
@@ -118,7 +145,7 @@ defmodule DBusDeviceTest do
     {:ok, device_dbus_path} = :dbus_proxy.call(mock_controller, @mock_dbus_name, "AddDevice", [])
     %{"dbus_mac" => dbus_mac} = Regex.named_captures(~r{/hci1/dev_(?<dbus_mac>.+)}, device_dbus_path)
     Process.sleep(100)
-    %Bluex.Device{adapter: "hci1", mac_address: String.replace(dbus_mac, "_", ":"), manufacturer_data: nil, rssi: "-71", uuids: ""}
+    %Bluex.Device{adapter: "hci1", mac_address: String.replace(dbus_mac, "_", ":"), manufacturer_data: nil, rssi: "-71", uuids: "", options: [device_handler_pid: self]}
   end
 
   def device_connected(_, _) do
@@ -140,6 +167,11 @@ defmodule DBusDeviceTest do
 
   def characteristic_not_found(device, service_uuid, characteristic_uuid) do
     send(device.options[:device_handler_pid], {:characteristic_not_found, service_uuid, characteristic_uuid})
+    :ok
+  end
+
+  def notification_received(device, service_uuid, characteristic_uuid, value) do
+    send(device.options[:device_handler_pid], {:notification_received, service_uuid, characteristic_uuid, value})
     :ok
   end
 end

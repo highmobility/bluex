@@ -6,4 +6,5 @@ defmodule Bluex.Device do
   @callback service_not_found(%Bluex.Device{}, String.t) :: any
   @callback characteristic_found(%Bluex.Device{}, String.t, String.t) :: any
   @callback characteristic_not_found(%Bluex.Device{}, String.t, String.t) :: any
+  @callback notification_received(%Bluex.Device{}, String.t, String.t, String.t) :: any
 end

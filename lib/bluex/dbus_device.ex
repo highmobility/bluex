@@ -87,6 +87,16 @@ defmodule Bluex.DBusDevice do
     GenServer.cast(pid, {:discover_characteristic, service_uuid, characteristic_uuid})
   end
 
+  @doc """
+  Starts notification for the given characteristic.
+
+  It calls `receive_notification` callbacks when notification is received
+  """
+  @spec start_notification(pid, String.t, String.t) :: any
+  def start_notification(pid, service_uuid, characteristic_uuid) do
+   GenServer.cast(pid, {:start_notification, service_uuid, characteristic_uuid})
+  end
+
   @doc false
   def handle_cast(:connect, state) do
     {:ok, device_proxy} = :dbus_proxy.start_link(state[:bus], @dbus_name, device_dbus_path(state[:device]))
@@ -142,6 +152,29 @@ defmodule Bluex.DBusDevice do
       apply(state[:module], :characteristic_not_found, [state[:device], service_uuid, characteristic_uuid])
     end
     state = put_in(state[:services][service_uuid][:characteristics], characteristics)
+    {:noreply, state}
+  end
+
+  @doc false
+  def handle_cast({:start_notification, service_uuid, characteristic_uuid}, state) do
+    characteristic = state[:services][service_uuid][:characteristics][characteristic_uuid]
+    receive_notification = fn(_sender, _ifacname, "PropertiesChanged", _path, args, pid) ->
+      case args do
+        {@characteristic_gatt_dbus_name, %{"Notifying" => true}, _} -> :noop
+        {@characteristic_gatt_dbus_name, %{"Value" => value}, _} ->
+          GenServer.cast(pid, {:notification_received, service_uuid, characteristic_uuid, value})
+      end
+    end
+
+    :ok = :dbus_proxy.connect_signal(characteristic[:dbus_proxy], "org.freedesktop.DBus.Properties", "PropertiesChanged", {receive_notification, self})
+    {:ok, _ } = :dbus_proxy.call(characteristic[:dbus_proxy], @characteristic_gatt_dbus_name, "StartNotify", [])
+
+    {:noreply, state}
+  end
+
+  @doc false
+  def handle_cast({:notification_received, service_uuid, characteristic_uuid, value}, state) do
+    apply(state[:module], :notification_received, [state[:device], service_uuid, characteristic_uuid, value])
     {:noreply, state}
   end
 

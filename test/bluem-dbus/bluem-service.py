@@ -132,10 +132,19 @@ class BlueMockCharacteristic(dbus.service.Object):
     def __init__(self, bus_name, object_path, uuid):
         dbus.service.Object.__init__(self, bus_name, object_path)
         self.uuid = uuid
+        self.object_path = object_path
 
-    @dbus.service.method("org.bluem.GattService1")
-    def foo(self):
-        return "foo"
+    @dbus.service.method("org.bluem.GattCharacteristic1")
+    def StartNotify(self):
+        _log("notification started for %s" % self.uuid)
+        self.PropertiesChanged("org.bluem.GattCharacteristic1", {"Notifying": True}, [])
+        return True
+
+    @dbus.service.method("org.bluem.GattCharacteristic1")
+    def SendNotification(self):
+        _log("send notification for %s" % self.uuid)
+        self.PropertiesChanged("org.bluem.GattCharacteristic1", {"Value": "ACEA"}, [])
+        return True
 
     @dbus.service.method("org.freedesktop.DBus.Properties", in_signature='ss', out_signature='v')
     def Get(self, interface, name):
@@ -146,6 +155,11 @@ class BlueMockCharacteristic(dbus.service.Object):
             raise dbus.exceptions.DBusException(
                     "org.freedesktop.UnknownInterface",
                     "Interface %s is unknown" % interface)
+
+    @dbus.service.signal("org.freedesktop.DBus.Properties", signature='sa{sv}as')
+    def PropertiesChanged(self, interface, args, l= []):
+        _log("PropertiesChanged .. %s %s" % (interface, args))
+
 
 
 
