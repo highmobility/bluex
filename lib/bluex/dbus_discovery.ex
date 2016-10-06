@@ -67,7 +67,7 @@ defmodule Bluex.DBusDiscovery do
   @doc false
   def handle_cast(:get_adapters, state) do
     adapters = :dbus_proxy.children(state[:adapter_manager])
-    |> Stream.map(fn (adapter) -> adapter |> String.split("/") |> Enum.at(-1) end)
+    |> Stream.map(&Path.basename/1)
     |> Stream.map(fn (adapter) ->
       bluez_path = "#{@dbus_bluez_path}/#{adapter}"
       {:ok, adapter_proxy} = :dbus_proxy.start_link(state[:bus], @dbus_name, bluez_path)
