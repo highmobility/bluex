@@ -140,6 +140,10 @@ class BlueMockCharacteristic(dbus.service.Object):
         self.PropertiesChanged("org.bluem.GattCharacteristic1", {"Notifying": True}, [])
         return True
 
+    @dbus.service.method("org.bluem.GattCharacteristic1", in_signature='s')
+    def WriteValue(self, value):
+        _log("Write value [%s] for %s" % (value, self.uuid))
+
     @dbus.service.method("org.bluem.GattCharacteristic1")
     def SendNotification(self):
         _log("send notification for %s" % self.uuid)

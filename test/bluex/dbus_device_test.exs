@@ -126,6 +126,22 @@ defmodule DBusDeviceTest do
     assert_receive({:notification_received, @service_uuid, @characteristic_uuid, "ACEA"})
   end
 
+  test "write characteristic" do
+    device = add_device
+
+    {:ok, pid} = DBusDevice.start_link(__MODULE__, device)
+    :ok = DBusDevice.connect(pid)
+    :ok = DBusDevice.discover_service(pid, @service_uuid)
+    :ok = DBusDevice.discover_characteristic(pid, @service_uuid, @characteristic_uuid)
+    Process.sleep(100)
+
+    {:ok, prop} =  read_device_properties(device)
+    assert %{"Connected" => true} = prop
+    assert_receive({:characteristic_found, @service_uuid, @characteristic_uuid})
+    :ok = DBusDevice.write_characteristic_value(pid, @service_uuid, @characteristic_uuid, "ACEB")
+  end
+
+
   def send_notification(device, service_uuid, characteristic_uuid) do
     {:ok, bus} = :dbus_bus_connection.connect(@dbus_type)
     path = "/org/bluem/hci1/dev_#{String.replace(device.mac_address, ":", "_")}/service000b/char000b"
