@@ -131,7 +131,7 @@ defmodule Bluex.DBusDevice do
 
   @doc false
   def handle_cast({:discover_service, service_uuid}, state) do
-    device_proxy = state[:device_proxy]
+    {:ok, device_proxy} = :dbus_proxy.start_link(state[:bus], @dbus_name, device_dbus_path(state[:device]))
     device = state[:device]
     with {:ok, services} = :dbus_proxy.call(device_proxy, @properties_dbus_name, "Get", [@device_dbus_name, "UUIDs"]),
     true <- Enum.member?(services, service_uuid) do
@@ -139,7 +139,6 @@ defmodule Bluex.DBusDevice do
                  |> :dbus_proxy.children
                  |> Enum.map(&Path.basename/1)
                  |> Enum.map(fn (service_dbus_name) ->
-                    IO.puts "path: #{device_dbus_path(device)}/#{service_dbus_name}"
                     {:ok, service} = :dbus_proxy.start_link(state[:bus], @dbus_name, "#{device_dbus_path(device)}/#{service_dbus_name}")
                     {:ok, service_uuid} = :dbus_proxy.call(service, @properties_dbus_name, "Get", [@gatt_dbus_name, "UUID"])
                     {service_uuid, %{dbus_name: service_dbus_name, dbus_proxy: service}}
