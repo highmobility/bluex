@@ -169,7 +169,7 @@ defmodule DBusDeviceTest do
     {:ok, bus} = :dbus_bus_connection.connect(@dbus_type)
     path = "/org/bluem/hci1/dev_#{String.replace(device.mac_address, ":", "_")}/service000b/char000b"
     {:ok, char_proxy} = :dbus_proxy.start_link(bus, @dbus_name, path)
-    :ok = :dbus_proxy.call(char_proxy, @characteristic_gatt_dbus_name, "WriteValue", [value])
+    :ok = :dbus_proxy.call(char_proxy, @characteristic_gatt_dbus_name, "WriteValue", [value, []])
   end
 
   def read_device_properties(device) do
