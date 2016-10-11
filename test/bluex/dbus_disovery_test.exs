@@ -45,7 +45,8 @@ defmodule DBusDiscoveryTest do
     assert device_dbus_path =~ dbus_name
   end
 
-  def device_found(_device) do
+  def device_found(device) do
+    assert device.adapter == "hci1"
     :ok
   end
 

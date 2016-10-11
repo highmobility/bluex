@@ -107,7 +107,12 @@ defmodule Bluex.DBusDiscovery do
     add_interface = fn(_sender, "org.freedesktop.DBus.ObjectManager", "InterfacesAdded", _path, args, pid) ->
       case args do
         {_interface_bluez_path, %{@device_dbus_name => device_details}} ->
-          device = %Bluex.Device{mac_address: device_details["Address"], manufacturer_data: device_details["ManufacturerData"], rssi: device_details["RSSI"], uuids: device_details["UUIDs"], adapter: "hci1"}
+          device = %Bluex.Device{}
+                   |> Map.put(:mac_address, device_details["Address"])
+                   |> Map.put(:manufacturer_data, device_details["ManufacturerData"])
+                   |> Map.put(:rssi, device_details["RSSI"])
+                   |> Map.put(:uuids, device_details["UUIDs"])
+                   |> Map.put(:adapter, Path.basename(device_details["Adapter"]))
           Bluex.DBusDiscovery.device_found(pid, device)
         _ -> :ok
       end
