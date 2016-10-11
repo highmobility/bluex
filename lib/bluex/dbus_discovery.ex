@@ -1,6 +1,4 @@
 defmodule Bluex.DBusDiscovery do
-  @callback device_found(%Bluex.Device{}) :: :ok | :ignore | :error
-
   @dbus_name Application.get_env(:bluex, :dbus_name)
   @iface_dbus_name Application.get_env(:bluex, :iface_dbus_name)
   @device_dbus_name Application.get_env(:bluex, :device_dbus_name)
@@ -149,7 +147,7 @@ defmodule Bluex.DBusDiscovery do
 
   defmacro __using__(_opts) do
     quote [unquote: false, location: :keep] do
-      @behaviour Bluex.DBusDiscovery
+      @behaviour Bluex.Discovery
       import Bluex.DBusDiscovery
       use GenServer
 

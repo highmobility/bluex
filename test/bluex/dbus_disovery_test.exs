@@ -2,7 +2,7 @@ defmodule DBusDiscoveryTest do
   use Bluex.DBusCase, async: false
   @moduletag dbus_server: "test/bluem-dbus/bluem-service.py"
 
-  @behaviour Bluex.DBusDiscovery
+  @behaviour Bluex.Discovery
 
   @dbus_name Application.get_env(:bluex, :dbus_name)
   @mock_dbus_name "org.mock"
