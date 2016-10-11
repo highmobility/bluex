@@ -12,6 +12,7 @@ defmodule Bluex.DBusDiscovery do
   @doc """
   Gets list of adapters
   """
+  @spec get_adapters(pid) :: list(String.t)
   def get_adapters(pid) do
     GenServer.call(pid, :get_adapters)
   end
@@ -19,11 +20,13 @@ defmodule Bluex.DBusDiscovery do
   @doc """
   Gets list of devices
   """
+  @spec get_devices(pid) :: list(%Bluex.Device{})
   def get_devices(pid) do
     GenServer.call(pid, :get_devices)
   end
 
   @doc false
+  @spec device_found(pid, %Bluex.Device{}) :: :ok
   def device_found(pid, device) do
     GenServer.cast(pid, {:device_found, device})
   end
@@ -35,6 +38,7 @@ defmodule Bluex.DBusDiscovery do
   @doc """
   Starts Bluetooth discovery
   """
+  @spec start_discovery(pid) :: :ok
   def start_discovery(pid) do
     GenServer.cast(pid, :start_discovery)
   end
@@ -42,6 +46,7 @@ defmodule Bluex.DBusDiscovery do
   @doc """
   Starts Bluetooth discovery
   """
+  @spec stop_discovery(pid) :: :ok
   def stop_discovery(pid) do
     GenServer.cast(pid, :stop_discovery)
   end
