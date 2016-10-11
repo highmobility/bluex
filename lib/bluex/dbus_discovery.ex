@@ -39,6 +39,14 @@ defmodule Bluex.DBusDiscovery do
     GenServer.cast(pid, :start_discovery)
   end
 
+  @doc """
+  Starts Bluetooth discovery
+  """
+  def stop_discovery(pid) do
+    GenServer.cast(pid, :stop_discovery)
+  end
+
+
   @doc false
   def init([module, _opts]) do
     {:ok, bus} = :dbus_bus_connection.connect(@dbus_type)
@@ -81,6 +89,15 @@ defmodule Bluex.DBusDiscovery do
     |> Enum.into(%{})
 
     state = Map.put(state, :adapters, adapters)
+    {:noreply, state}
+  end
+
+  @doc false
+  def handle_cast(:stop_discovery, state) do
+    state[:adapters]
+    |> Enum.each(fn ({_, %{proxy: adapter_proxy}}) ->
+      :dbus_proxy.call(adapter_proxy, @iface_dbus_name, "StopDiscovery", [])
+    end)
     {:noreply, state}
   end
 
@@ -136,6 +153,10 @@ defmodule Bluex.DBusDiscovery do
       """
       def start_discovery do
         Bluex.DBusDiscovery.start_discovery(__MODULE__)
+      end
+
+      def stop_discovery do
+        Bluex.DBusDiscovery.stop_discovery(__MODULE__)
       end
     end
   end

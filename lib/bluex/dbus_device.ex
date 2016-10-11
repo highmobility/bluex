@@ -94,7 +94,7 @@ defmodule Bluex.DBusDevice do
   """
   @spec start_notification(pid, String.t, String.t) :: any
   def start_notification(pid, service_uuid, characteristic_uuid) do
-   GenServer.cast(pid, {:start_notification, service_uuid, characteristic_uuid})
+   GenServer.call(pid, {:start_notification, service_uuid, characteristic_uuid})
   end
 
   @doc """
@@ -131,7 +131,7 @@ defmodule Bluex.DBusDevice do
 
   @doc false
   def handle_cast({:discover_service, service_uuid}, state) do
-    device_proxy = state[:device_proxy]
+    {:ok, device_proxy} = :dbus_proxy.start_link(state[:bus], @dbus_name, device_dbus_path(state[:device]))
     device = state[:device]
     with {:ok, services} = :dbus_proxy.call(device_proxy, @properties_dbus_name, "Get", [@device_dbus_name, "UUIDs"]),
     true <- Enum.member?(services, service_uuid) do
@@ -139,7 +139,6 @@ defmodule Bluex.DBusDevice do
                  |> :dbus_proxy.children
                  |> Enum.map(&Path.basename/1)
                  |> Enum.map(fn (service_dbus_name) ->
-                    IO.puts "path: #{device_dbus_path(device)}/#{service_dbus_name}"
                     {:ok, service} = :dbus_proxy.start_link(state[:bus], @dbus_name, "#{device_dbus_path(device)}/#{service_dbus_name}")
                     {:ok, service_uuid} = :dbus_proxy.call(service, @properties_dbus_name, "Get", [@gatt_dbus_name, "UUID"])
                     {service_uuid, %{dbus_name: service_dbus_name, dbus_proxy: service}}
@@ -172,7 +171,13 @@ defmodule Bluex.DBusDevice do
   end
 
   @doc false
-  def handle_cast({:start_notification, service_uuid, characteristic_uuid}, state) do
+  def handle_cast({:notification_received, service_uuid, characteristic_uuid, value}, state) do
+    apply(state[:module], :notification_received, [state[:device], service_uuid, characteristic_uuid, value])
+    {:noreply, state}
+  end
+
+  @doc false
+  def handle_call({:start_notification, service_uuid, characteristic_uuid}, _, state) do
     characteristic = state[:services][service_uuid][:characteristics][characteristic_uuid]
     receive_notification = fn(_sender, _ifacname, "PropertiesChanged", _path, args, pid) ->
       case args do
@@ -183,28 +188,22 @@ defmodule Bluex.DBusDevice do
     end
 
     :ok = :dbus_proxy.connect_signal(characteristic[:dbus_proxy], "org.freedesktop.DBus.Properties", "PropertiesChanged", {receive_notification, self})
-    {:ok, _ } = :dbus_proxy.call(characteristic[:dbus_proxy], @characteristic_gatt_dbus_name, "StartNotify", [])
+    :ok = :dbus_proxy.call(characteristic[:dbus_proxy], @characteristic_gatt_dbus_name, "StartNotify", [])
 
-    {:noreply, state}
-  end
-
-  @doc false
-  def handle_cast({:notification_received, service_uuid, characteristic_uuid, value}, state) do
-    apply(state[:module], :notification_received, [state[:device], service_uuid, characteristic_uuid, value])
-    {:noreply, state}
+    {:reply, :ok, state}
   end
 
   @doc false
   def handle_call({:write_characteristic_value, service_uuid, characteristic_uuid, value}, _, state) do
     characteristic = state[:services][service_uuid][:characteristics][characteristic_uuid]
-    :ok = :dbus_proxy.call(characteristic[:dbus_proxy], @characteristic_gatt_dbus_name, "WriteValue", [value])
+    :ok = :dbus_proxy.call(characteristic[:dbus_proxy], @characteristic_gatt_dbus_name, "WriteValue", [value, []])
     {:reply, :ok, state}
   end
 
   @doc false
   def handle_call({:read_characteristic_value, service_uuid, characteristic_uuid}, _, state) do
     characteristic = state[:services][service_uuid][:characteristics][characteristic_uuid]
-    {:ok, value} = :dbus_proxy.call(characteristic[:dbus_proxy], @characteristic_gatt_dbus_name, "ReadValue", [])
+    {:ok, value} = :dbus_proxy.call(characteristic[:dbus_proxy], @characteristic_gatt_dbus_name, "ReadValue", [[]])
     {:reply, value, state}
   end
 
