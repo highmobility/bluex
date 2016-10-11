@@ -1,1 +1,2 @@
-%{"dbus": {:git, "https://github.com/slashmili/erlang-dbus.git", "6998ebd8236dcbf9b8a8ca7df83595d448e403bb", [branch: "unix-socket"]}}
+%{"dbus": {:git, "https://github.com/slashmili/erlang-dbus.git", "6998ebd8236dcbf9b8a8ca7df83595d448e403bb", [branch: "unix-socket"]},
+  "dialyxir": {:hex, :dialyxir, "0.3.5", "eaba092549e044c76f83165978979f60110dc58dd5b92fd952bf2312f64e9b14", [:mix], []}}

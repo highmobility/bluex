@@ -10,7 +10,8 @@ defmodule Bluex.Mixfile do
      elixirc_paths: elixirc_paths(Mix.env),
      package: package,
      description: description,
-     deps: deps()]
+     deps: deps(),
+     dialyzer: [plt_add_deps: :transitive]]
   end
 
   # Configuration for the OTP application
@@ -25,7 +26,10 @@ defmodule Bluex.Mixfile do
   defp elixirc_paths(_),     do: ["lib"]
 
   defp deps do
-    [{:dbus, github: "slashmili/erlang-dbus", branch: "unix-socket"}]
+    [
+      {:dbus, github: "slashmili/erlang-dbus", branch: "unix-socket"},
+      {:dialyxir, "~> 0.3.5", only: :dev}
+    ]
   end
 
   def package do
