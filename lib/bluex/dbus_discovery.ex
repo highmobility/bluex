@@ -6,6 +6,7 @@ defmodule Bluex.DBusDiscovery do
   @dbus_type Application.get_env(:bluex, :bus_type)
 
   use GenServer
+  alias Bluex.DiscoveryFilter
 
   @doc """
   Gets list of adapters
@@ -38,8 +39,19 @@ defmodule Bluex.DBusDiscovery do
   """
   @spec start_discovery(pid) :: :ok
   def start_discovery(pid) do
-    GenServer.cast(pid, :start_discovery)
+    GenServer.cast(pid, {:start_discovery, %DiscoveryFilter{}})
   end
+
+  @doc """
+  Starts Bluetooth discovery and sets the device discovery filter.
+
+  Filter is `Bluex.DiscoveryFilter` struct.
+  """
+  @spec start_discovery(pid, %DiscoveryFilter{}) :: :ok
+  def start_discovery(pid, filter) do
+    GenServer.cast(pid, {:start_discovery, filter})
+  end
+
 
   @doc """
   Starts Bluetooth discovery
@@ -105,7 +117,7 @@ defmodule Bluex.DBusDiscovery do
   end
 
   @doc false
-  def handle_cast(:start_discovery, state) do
+  def handle_cast({:start_discovery, filter}, state) do
     #TODO: ???get list of devices now and call the device_found callback before leaving this function
     add_interface = fn(_sender, "org.freedesktop.DBus.ObjectManager", "InterfacesAdded", _path, args, pid) ->
       case args do
@@ -127,8 +139,7 @@ defmodule Bluex.DBusDiscovery do
     :dbus_proxy.children(state[:bluez_manager])
     state[:adapters]
     |> Enum.each(fn ({_, %{proxy: adapter_proxy}}) ->
-      #TODO: to filter_services
-      #:ok = :dbus_proxy.call(adapter_proxy, @iface_dbus_name, "SetDiscoveryFilter", [%{"UUIDs" => ["5842aec9-3aee-a150-5a8c-159d686d6363"]}])
+      :ok = :dbus_proxy.call(adapter_proxy, @iface_dbus_name, "SetDiscoveryFilter", [filter_to_dbus_array(filter)])
       :ok = :dbus_proxy.call(adapter_proxy, @iface_dbus_name, "StartDiscovery", [])
     end)
     {:noreply, state}
@@ -145,6 +156,13 @@ defmodule Bluex.DBusDiscovery do
     {:noreply, state}
   end
 
+  defp filter_to_dbus_array(filter) do
+    %{
+      "Transport" => {:dbus_variant, :string, Atom.to_string(filter.transport)},
+      "UUIDs" => {:dbus_variant, {:array, :string}, filter.uuids}
+    }
+  end
+
   defmacro __using__(_opts) do
     quote [unquote: false, location: :keep] do
       @behaviour Bluex.Discovery
@@ -159,8 +177,8 @@ defmodule Bluex.DBusDiscovery do
       @doc """
       Starts Bluetooth discovery
       """
-      def start_discovery do
-        Bluex.DBusDiscovery.start_discovery(__MODULE__)
+      def start_discovery(filter \\ %DiscoveryFilter{}) do
+        Bluex.DBusDiscovery.start_discovery(__MODULE__, filter)
       end
 
       def stop_discovery do

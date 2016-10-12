@@ -183,6 +183,11 @@ class BlueMockHCI(dbus.service.Object):
         _log("StartDiscovery ...")
         pass
 
+    @dbus.service.method("org.bluem.Adapter1", in_signature='a{sv}')
+    def SetDiscoveryFilter(self, filters):
+        _log("SetDiscoveryFilter to %s" % filters)
+        pass
+
 
 
 blue_mock = BlueMock(service, object_path="/")

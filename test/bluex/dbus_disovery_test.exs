@@ -27,6 +27,11 @@ defmodule DBusDiscoveryTest do
     #TODO: check Properties to make sure it's called
   end
 
+  test "start discovery with specific filter" do
+    {:ok, _} = DBusDiscovery.start_link(__MODULE__, [])
+    :ok = DBusDiscovery.start_discovery(__MODULE__, %Bluex.DiscoveryFilter{transport: "le", uuids: ["192e3e60-9065-11e6-ae22-56b6b6499611"]})
+  end
+
   test "call device_found callback when new device is discoverd" do
     {:ok, _} = DBusDiscovery.start_link(__MODULE__, [])
     :ok = DBusDiscovery.start_discovery(__MODULE__)
