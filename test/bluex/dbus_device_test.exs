@@ -111,6 +111,7 @@ defmodule DBusDeviceTest do
 
     {:ok, pid} = DBusDevice.start_link(__MODULE__, device)
     :ok = DBusDevice.connect(pid)
+    Process.sleep(100)
     :ok = DBusDevice.discover_service(pid, @service_uuid)
     :ok = DBusDevice.discover_characteristic(pid, @service_uuid, @characteristic_uuid)
     Process.sleep(100)
@@ -131,6 +132,7 @@ defmodule DBusDeviceTest do
 
     {:ok, pid} = DBusDevice.start_link(__MODULE__, device)
     :ok = DBusDevice.connect(pid)
+    Process.sleep(100)
     :ok = DBusDevice.discover_service(pid, @service_uuid)
     :ok = DBusDevice.discover_characteristic(pid, @service_uuid, @characteristic_uuid)
     Process.sleep(100)
@@ -146,6 +148,7 @@ defmodule DBusDeviceTest do
 
     {:ok, pid} = DBusDevice.start_link(__MODULE__, device)
     :ok = DBusDevice.connect(pid)
+    Process.sleep(100)
     :ok = DBusDevice.discover_service(pid, @service_uuid)
     :ok = DBusDevice.discover_characteristic(pid, @service_uuid, @characteristic_uuid)
     Process.sleep(100)

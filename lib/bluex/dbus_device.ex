@@ -116,8 +116,27 @@ defmodule Bluex.DBusDevice do
   @doc false
   def handle_cast(:connect, state) do
     {:ok, device_proxy} = :dbus_proxy.start_link(state[:bus], @dbus_name, device_dbus_path(state[:device]))
-    :ok = :dbus_proxy.call(device_proxy, @device_dbus_name, "Connect", [])
-    #TODO: check if there is any other way than reconnecting
+    device_property_changed = fn(_sender, _ifacname, "PropertiesChanged", _path, args, pid) ->
+      case args do
+        {@device_dbus_name, %{"RSSI" => _}, _} -> :noop
+        {@device_dbus_name, %{"Connected" => true}, _} ->
+          GenServer.cast(pid, :device_connected)
+        other -> :noop
+      end
+    end
+
+    :ok = :dbus_proxy.connect_signal(device_proxy, "org.freedesktop.DBus.Properties", "PropertiesChanged", {device_property_changed, self})
+
+    case :dbus_proxy.call(device_proxy, @device_dbus_name, "Connect", []) do
+      :ok -> :noop
+      {:error, {_, "Operation already in progress"}} -> :noop
+      #otherwise exit and the supervise handles it
+    end
+    {:noreply, state}
+  end
+
+  @doc false
+  def handle_cast(:device_connected, state) do
     {:ok, device_proxy} = :dbus_proxy.start_link(state[:bus], @dbus_name, device_dbus_path(state[:device]))
     apply(state[:module], :device_connected, [state[:device], %{}])
     {:noreply, %{state | device_proxy: device_proxy}}

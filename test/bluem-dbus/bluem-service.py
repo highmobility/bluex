@@ -92,6 +92,7 @@ class BlueMockDevice(dbus.service.Object):
 
         tmp_path = "%s/service000b" % self.device_path
         BlueMockService(service, object_path=tmp_path, uuid='713d0100-503e-4c75-ba94-3148f18d941e')
+        self.PropertiesChanged("org.bluem.Device1", {"Connected": True}, [])
 
     @dbus.service.method(dbus.PROPERTIES_IFACE, in_signature='s', out_signature='a{sv}')
     def GetAll(self, interface):
@@ -106,6 +107,10 @@ class BlueMockDevice(dbus.service.Object):
         else:
             _log("don't know what is property %s for interface %s" % (name, interface))
             return {}
+
+    @dbus.service.signal("org.freedesktop.DBus.Properties", signature='sa{sv}as')
+    def PropertiesChanged(self, interface, args, l= []):
+        _log("PropertiesChanged .. %s %s" % (interface, args))
 
 class BlueMockService(dbus.service.Object):
     def __init__(self, bus_name, object_path, uuid):
