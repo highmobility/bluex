@@ -32,6 +32,23 @@ defmodule DBusDiscoveryTest do
     :ok = DBusDiscovery.start_discovery(__MODULE__, %Bluex.DiscoveryFilter{transport: "le", uuids: ["192e3e60-9065-11e6-ae22-56b6b6499611"]})
   end
 
+  test "stop the discoverd process if there is no matched adapter" do
+    pid = spawn(fn ->
+      {:ok, _} = DBusDiscovery.start_link(__MODULE__, [])
+      :ok = DBusDiscovery.start_discovery(__MODULE__, %Bluex.DiscoveryFilter{adapters: ["hci9"]})
+    end)
+    assert Process.info(pid)
+    Process.sleep(100)
+    refute Process.info(pid), "The process should be stopped"
+  end
+
+  test "start discovery on existing adapter" do
+    {:ok, _} = DBusDiscovery.start_link(__MODULE__, [])
+    :ok = DBusDiscovery.start_discovery(__MODULE__, %Bluex.DiscoveryFilter{adapters: ["hci1"]})
+    Process.sleep(1000)
+  end
+
+
   test "call device_found callback when new device is discoverd" do
     {:ok, _} = DBusDiscovery.start_link(__MODULE__, [])
     :ok = DBusDiscovery.start_discovery(__MODULE__)

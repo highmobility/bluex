@@ -4,11 +4,13 @@ end
 
 defmodule Bluex.DiscoveryFilter do
   @moduledoc """
-      transport, type of scan to run:
+      * transport, type of scan to run:
         * :auto  - interleaved scan
         * :bredr - br/edr inquiry
         * :le  - le only scan, default value
-      uuids: filtered service UUIDs
+      * uuids: filtered service UUIDs
+      * adapters: list of the adapters to run discovery on.
+          If it's not provided the discovery runs on all the adapters.
   """
-  defstruct transport: :le, uuids: []
+  defstruct transport: :le, uuids: [], adapters: []
 end

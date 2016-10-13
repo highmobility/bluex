@@ -138,10 +138,14 @@ defmodule Bluex.DBusDiscovery do
                                {add_interface, self})
     :dbus_proxy.children(state[:bluez_manager])
     state[:adapters]
-    |> Enum.each(fn ({_, %{proxy: adapter_proxy}}) ->
+    |> Enum.filter(&(match_adapter(&1, filter)))
+    |> Enum.map(fn ({_, %{proxy: adapter_proxy}}) ->
       :ok = :dbus_proxy.call(adapter_proxy, @iface_dbus_name, "SetDiscoveryFilter", [filter_to_dbus_array(filter)])
       :ok = :dbus_proxy.call(adapter_proxy, @iface_dbus_name, "StartDiscovery", [])
     end)
+    |> Kernel."=="([])
+    |> if(do: throw {:stop, {:adapter_not_found, filter.adapters}, state})
+
     {:noreply, state}
   end
 
@@ -161,6 +165,13 @@ defmodule Bluex.DBusDiscovery do
       "Transport" => {:dbus_variant, :string, Atom.to_string(filter.transport)},
       "UUIDs" => {:dbus_variant, {:array, :string}, filter.uuids}
     }
+  end
+
+  defp match_adapter({adapter_name, _}, filter) do
+    case filter.adapters do
+      [] -> true
+      adapters -> Enum.member?(adapters, adapter_name)
+    end
   end
 
   defmacro __using__(_opts) do
