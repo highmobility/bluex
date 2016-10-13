@@ -32,7 +32,7 @@ defmodule DBusDiscoveryTest do
     :ok = DBusDiscovery.start_discovery(__MODULE__, %Bluex.DiscoveryFilter{transport: "le", uuids: ["192e3e60-9065-11e6-ae22-56b6b6499611"]})
   end
 
-  test "stop the discoverd process if there is no matched adapter" do
+  test "stop the discovery process if there is no matched adapter" do
     pid = spawn(fn ->
       {:ok, _} = DBusDiscovery.start_link(__MODULE__, [])
       :ok = DBusDiscovery.start_discovery(__MODULE__, %Bluex.DiscoveryFilter{adapters: ["hci9"]})
