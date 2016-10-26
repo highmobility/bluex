@@ -81,6 +81,11 @@ class BlueMockDevice(dbus.service.Object):
         self.uuids = ['5842aec9-3aee-a150-5a8c-159d686d6363']
         self.device_path = object_path
 
+
+    @dbus.service.method("org.bluem.Device1")
+    def Disconnect(self):
+        self.PropertiesChanged("org.bluem.Device1", {"Connected": False}, [])
+
     @dbus.service.method("org.bluem.Device1")
     def Connect(self):
         _log("Connecting ...")

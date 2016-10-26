@@ -121,7 +121,9 @@ defmodule Bluex.DBusDevice do
         {@device_dbus_name, %{"RSSI" => _}, _} -> :noop
         {@device_dbus_name, %{"Connected" => true}, _} ->
           GenServer.cast(pid, :device_connected)
-        other -> :noop
+        {@device_dbus_name, %{"Connected" => false}, _} ->
+          GenServer.cast(pid, :device_disconnected)
+        _ -> :noop
       end
     end
 
@@ -140,6 +142,12 @@ defmodule Bluex.DBusDevice do
     {:ok, device_proxy} = :dbus_proxy.start_link(state[:bus], @dbus_name, device_dbus_path(state[:device]))
     apply(state[:module], :device_connected, [state[:device], %{}])
     {:noreply, %{state | device_proxy: device_proxy}}
+  end
+
+  @doc false
+  def handle_cast(:device_disconnected, state) do
+    apply(state[:module], :device_disconnected, [state[:device]])
+    {:noreply, state}
   end
 
   @doc false
