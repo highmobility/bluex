@@ -1,13 +1,13 @@
 defmodule Bluex.DBusDevice do
   use GenServer
 
-  @dbus_name Application.get_env(:bluex, :dbus_name)
-  @iface_dbus_name Application.get_env(:bluex, :iface_dbus_name)
-  @device_dbus_name Application.get_env(:bluex, :device_dbus_name)
-  @gatt_dbus_name Application.get_env(:bluex, :gatt_dbus_name)
-  @characteristic_gatt_dbus_name Application.get_env(:bluex, :characteristic_gatt_dbus_name)
-  @dbus_bluez_path Application.get_env(:bluex, :dbus_bluez_path)
-  @dbus_type Application.get_env(:bluex, :bus_type)
+  @dbus_name Application.get_env(:bluex, :dbus_name) || "org.bluez"
+  @iface_dbus_name Application.get_env(:bluex, :iface_dbus_name) || "org.bluez.Adapter1"
+  @device_dbus_name Application.get_env(:bluex, :device_dbus_name) || "org.bluez.Device1"
+  @gatt_dbus_name Application.get_env(:bluex, :gatt_dbus_name) || "org.bluez.GattService1"
+  @characteristic_gatt_dbus_name Application.get_env(:bluex, :characteristic_gatt_dbus_name) || "org.bluez.GattCharacteristic1"
+  @dbus_bluez_path Application.get_env(:bluex, :dbus_bluez_path) || "/org/bluez"
+  @dbus_type Application.get_env(:bluex, :bus_type) || :system
   @properties_dbus_name "org.freedesktop.DBus.Properties"
 
   @type on_start :: {:ok, pid} | :ignore | {:error, {:already_started, pid} | term}
