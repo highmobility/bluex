@@ -14,6 +14,6 @@ The package can be installed as:
 
     ```elixir
     def deps do
-      [{:bluex, github: "highmobility/bluex", tag: "0.1.0"}]
+      [{:bluex, github: "highmobility/bluex", tag: "0.1.1"}]
     end
     ```
