@@ -12,4 +12,4 @@ config :bluex,
   characteristic_gatt_dbus_name: "org.bluez.GattCharacteristic1",
   dbus_bluez_path: "/org/bluez"
 
-import_config "#{Mix.env}.exs"
+if File.exists?("config/#{Mix.env}.exs"), do: import_config "#{Mix.env}.exs"

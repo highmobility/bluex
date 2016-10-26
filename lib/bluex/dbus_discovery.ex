@@ -1,9 +1,9 @@
 defmodule Bluex.DBusDiscovery do
-  @dbus_name Application.get_env(:bluex, :dbus_name)
-  @iface_dbus_name Application.get_env(:bluex, :iface_dbus_name)
-  @device_dbus_name Application.get_env(:bluex, :device_dbus_name)
-  @dbus_bluez_path Application.get_env(:bluex, :dbus_bluez_path)
-  @dbus_type Application.get_env(:bluex, :bus_type)
+  @dbus_name Application.get_env(:bluex, :dbus_name) || "org.bluez"
+  @iface_dbus_name Application.get_env(:bluex, :iface_dbus_name) || "org.bluez.Adapter1"
+  @device_dbus_name Application.get_env(:bluex, :device_dbus_name) || "org.bluez.Device1"
+  @dbus_bluez_path Application.get_env(:bluex, :dbus_bluez_path) || "/org/bluez"
+  @dbus_type Application.get_env(:bluex, :bus_type) || :system
 
   use GenServer
   alias Bluex.DiscoveryFilter
