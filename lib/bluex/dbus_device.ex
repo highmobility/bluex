@@ -132,6 +132,8 @@ defmodule Bluex.DBusDevice do
     case :dbus_proxy.call(device_proxy, @device_dbus_name, "Connect", []) do
       :ok -> :noop
       {:error, {_, "Operation already in progress"}} -> :noop
+      {:error, {:"org.freedesktop.DBus.UnknownInterface", _}} ->
+          GenServer.cast(self, :device_disconnected)
       #otherwise exit and the supervise handles it
     end
     {:noreply, state}
