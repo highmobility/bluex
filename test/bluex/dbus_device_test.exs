@@ -36,6 +36,21 @@ defmodule DBusDeviceTest do
     assert %{"Connected" => true} = prop
   end
 
+  test "device_disconnected is called if device is disconnected" do
+    device = add_device
+
+    {:ok, pid} = DBusDevice.start_link(__MODULE__, device)
+    :ok = DBusDevice.connect(pid)
+    Process.sleep(100)
+
+    {:ok, prop} =  read_device_properties(device)
+    assert %{"Connected" => true} = prop
+
+    disconnect_device(device)
+
+    assert_receive :device_disconnected
+  end
+
   test "doesnt discover any service before connecting to the device" do
     device = add_device
 
@@ -190,8 +205,18 @@ defmodule DBusDeviceTest do
     %Bluex.Device{adapter: "hci1", mac_address: String.replace(dbus_mac, "_", ":"), manufacturer_data: nil, rssi: "-71", uuids: "", options: [device_handler_pid: self]}
   end
 
+  def disconnect_device(device) do
+    {:ok, bus} = :dbus_bus_connection.connect(@dbus_type)
+    {:ok, device_proxy} = :dbus_proxy.start_link(bus, @dbus_name, DBusDevice.device_dbus_path(device))
+    :ok = :dbus_proxy.call(device_proxy, @device_dbus_name, "Disconnect", [])
+  end
+
   def device_connected(_, _) do
     :ok
+  end
+
+  def device_disconnected(device) do
+    send(device.options[:device_handler_pid], :device_disconnected)
   end
 
   def service_found(_, _) do
