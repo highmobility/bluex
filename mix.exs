@@ -27,7 +27,7 @@ defmodule Bluex.Mixfile do
 
   defp deps do
     [
-      {:dbus, github: "slashmili/erlang-dbus", branch: "unix-socket"},
+      {:dbus, github: "slashmili/erlang-dbus", branch: "unix-socket", optional: true},
       {:dialyxir, "~> 0.3.5", only: :dev},
       {:ex_doc, "~> 0.14.2", only: :dev},
       {:earmark, "~> 1.0", only: :dev},
