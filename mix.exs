@@ -8,8 +8,8 @@ defmodule Bluex.Mixfile do
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      elixirc_paths: elixirc_paths(Mix.env),
-     package: package,
-     description: description,
+     package: package(),
+     description: description(),
      deps: deps(),
      dialyzer: [plt_add_deps: :transitive]]
   end
